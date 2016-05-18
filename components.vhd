@@ -133,7 +133,7 @@ begin
   COMBINATIONAL : process(in1, in2, sel)
     variable temp    : unsigned(width downto 0);
   begin
-	  temp        :=(others => '0');
+	  temp        := (others => '0');
     output      <= (others => '0');
     case sel is
         when ALU_ADDU  =>
@@ -145,11 +145,11 @@ begin
         when ALU_MULTU =>
           temp := resize(unsigned(in1)*unsigned(in2), width+1);
         when ALU_AND   =>
-          temp := ('0' & unsigned(in1)) and ('0' & unsigned(in2));
+          temp := (resize(unsigned(in1), width+1)) and (resize(unsigned(in2), width+1));
         when ALU_OR    =>
-          temp := ('0' & unsigned(in1)) or ('0' & unsigned(in2));
+          temp := (resize(unsigned(in1), width+1)) or (resize(unsigned(in2), width+1));
         when ALU_XOR   =>
-          temp := ('0' & unsigned(in1)) xor ('0' & unsigned(in2));
+          temp := (resize(unsigned(in1), width+1)) xor (resize(unsigned(in2), width+1));
         when ALU_SRL   =>
           temp := SHIFT_RIGHT(resize(unsigned(in1), width+1), to_integer(unsigned(in2)));
         when ALU_SLL   =>
@@ -164,24 +164,24 @@ begin
           if ('0' & in1) < ('0' & in2) then
               temp := to_unsigned(1, temp'length);
           end if;
-        when ALU_MFHI  =>
-        when ALU_MFLO  =>
-        when ALU_LW    =>
-        when ALU_SW    =>
-        when ALU_LB    =>
-        when ALU_LBU   =>
-        when ALU_SB    =>
-        when ALU_LH    =>
-        when ALU_LHU   =>
-        when ALU_SH    =>
-        when ALU_LWU   =>
-        when ALU_BEQ   =>
-        when ALU_BNE   =>
-        when ALU_BLEZ  =>
-        when ALU_BGTZ  =>
-        when ALU_J     =>
-        when ALU_JAL   =>
-        when ALU_JR    =>
+        -- when ALU_MFHI  =>
+        -- when ALU_MFLO  =>
+        -- when ALU_LW    =>
+        -- when ALU_SW    =>
+        -- when ALU_LB    =>
+        -- when ALU_LBU   =>
+        -- when ALU_SB    =>
+        -- when ALU_LH    =>
+        -- when ALU_LHU   =>
+        -- when ALU_SH    =>
+        -- when ALU_LWU   =>
+        -- when ALU_BEQ   =>
+        -- when ALU_BNE   =>
+        -- when ALU_BLEZ  =>
+        -- when ALU_BGTZ  =>
+        -- when ALU_J     =>
+        -- when ALU_JAL   =>
+        -- when ALU_JR    =>
         when others    => null;
     end case;
     output <= std_logic_vector(resize(temp, width));
@@ -196,6 +196,7 @@ end architecture;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.library_file.all;
 
 entity register_file is
   port(
@@ -227,7 +228,7 @@ begin
           outA <= input;
         end if;
         if regBSel = writeRegSel then  -- Bypass for read B
-          outB <= input4
+          outB <= input;
         end if;
       end if;
     end if;

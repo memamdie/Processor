@@ -6,7 +6,7 @@ package library_file is
   type arr32 is array (integer range <>) of std_logic_vector(31 downto 0);
   type arr16 is array (integer range <>) of std_logic_vector(15 downto 0);
   type arr5 is array (integer range <>) of std_logic_vector(4 downto 0);
-  type registerFile is array(0 to 15) of std_logic_vector(63 downto 0);
+  type registerFile is array(0 to 31) of std_logic_vector(31 downto 0);
 
   type opcode is (
       ALU_ADDU,
