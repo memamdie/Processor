@@ -6,24 +6,30 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.library_file.all;
 entity reg is
-  generic ( width : positive := 32);
+  generic (
+    width  :     positive := 32);
   port (
-    clk, rst : in std_logic;
-    input    : in std_logic_vector(width-1 downto 0);
-    output   : out std_logic_vector(width-1 downto 0));
-end entity;
+    clk    : in  std_logic;
+    rst    : in  std_logic;
+    en   : in  std_logic;
+    input  : in  std_logic_vector(width-1 downto 0);
+    output : out std_logic_vector(width-1 downto 0));
+end reg;
 
-architecture arch of reg is
+
+architecture BHV of reg is
 begin
-  sequential : process(clk, rst)
+  process(clk, rst)
   begin
-    if rst <= '1' then
-      output <= (others => '0');
+    if (rst = '1') then
+      output   <= (others => '0');
     elsif rising_edge(clk) then
-      output <= input;
+      if (en = '1') then
+        output <= input;
+      end if;
     end if;
   end process;
-end architecture;
+end BHV;
 
 
 
@@ -48,6 +54,46 @@ architecture arch of mux32 is
 begin
   output <= inputs(to_integer(unsigned(sel)));
 end architecture;
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.math_real.all;
+use work.library_file.all;
+entity mux4x1 is
+  port (
+    in1, in2, in3, in4 : in std_logic_vector(31 downto 0);
+    sel                : in std_logic_vector(1 downto 0);
+    output             : out std_logic_vector(31 downto 0)
+  );
+end entity;
+
+architecture arch of mux4x1 is
+  begin
+
+    process(sel, in1, in2, in3, in4)
+    begin
+      case( sel ) is
+
+      when "00" =>
+        output <= in1;
+
+      when "01" =>
+        output <= in2;
+
+      when "10" =>
+        output <= in3;
+
+      when "11" =>
+        output <= in4;
+
+      when others => null;
+
+      end case;
+    end process;
+
+end architecture;
+
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -213,10 +259,12 @@ end register_file;
 
 
 architecture behavioral of register_file is
-  signal registers : registerFile;
+  signal registers : registerFile := (others => (others => '0'));
 begin
-  regFile : process (clk) is
+  regFile : process (clk, registers, regASel, regBSel, writeEnable) is
   begin
+    -- outA <= ZERO;
+    -- outB <= ZERO;
     if rising_edge(clk) then
       -- Read A and B before bypass
       outA <= registers(to_integer(unsigned(regASel)));
