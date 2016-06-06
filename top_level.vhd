@@ -16,14 +16,15 @@ architecture top_level of top_level is
   signal mem_en, pc_en, a_en, b_en, ir_en, alu_en, wren, regfile_en : std_logic;
   signal mem_sel, a_sel, wr_reg_sel, wr_data_sel                    : std_logic_vector(0 downto 0);
   signal b_sel, pc_sel                                              : std_logic_vector(1 downto 0);
-  signal ALU_op                                                     : opcode;
-  signal IR                                                         : std_logic_vector(5 downto 0);
+  signal IR, alu_sel                                                : opcode;
+  signal imm                                                        : std_logic;
 begin
   U_CONTROLLER : entity work.controller
   port map (
       clk         => clk,
       rst         => rst,
-      IR          => IR,
+      instruction => IR,
+      immediate   => imm,
       mem_en      => mem_en,
       pc_en       => pc_en,
       a_en        => a_en,
@@ -37,14 +38,15 @@ begin
       wr_reg_sel  => wr_reg_sel,
       wr_data_sel => wr_data_sel,
       b_sel       => b_sel,
-      pc_sel      => pc_sel,
-      ALU_op      => ALU_op
+      alu_sel     => alu_sel,
+      pc_sel      => pc_sel
   );
   U_DATAPATH : entity work.datapath
   port map (
       clk         => clk,
       rst         => rst,
-      IR          => IR,
+      instruction => IR,
+      immediate   => imm,
       mem_en      => mem_en,
       pc_en       => pc_en,
       a_en        => a_en,
@@ -58,7 +60,7 @@ begin
       wr_reg_sel  => wr_reg_sel,
       wr_data_sel => wr_data_sel,
       b_sel       => b_sel,
-      pc_sel      => pc_sel,
-      ALU_op      => ALU_op
+      alu_sel     => alu_sel,
+      pc_sel      => pc_sel
   );
 end architecture;

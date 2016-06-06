@@ -170,7 +170,8 @@ entity ALU is
   port (
     in1, in2    : in std_logic_vector(width-1 downto 0);
     sel         : in opcode;
-    output      : out std_logic_vector(width-1 downto 0)
+    output      : out std_logic_vector(width-1 downto 0);
+    eq, gt, lt  : out std_logic
   );
 end entity;
 
@@ -181,53 +182,56 @@ begin
   begin
 	  temp        := (others => '0');
     output      <= (others => '0');
+    eq          <= '0';
+    gt          <= '0';
+    lt          <= '0';
     case sel is
-        when ALU_ADDU  =>
+        when OP_ADDU  =>
           temp := resize(unsigned(in1), width+1) + resize(unsigned(in2), width+1);
-        when ALU_SUBU  =>
+        when OP_SUBU  =>
           temp := resize(unsigned(in1), width+1) + resize(unsigned(in2), width+1);
-        when ALU_MULT  =>
+        when OP_MULT  =>
           temp := unsigned(resize(signed(in1)*signed(in2), width+1));
-        when ALU_MULTU =>
+        when OP_MULTU =>
           temp := resize(unsigned(in1)*unsigned(in2), width+1);
-        when ALU_AND   =>
+        when OP_AND   =>
           temp := (resize(unsigned(in1), width+1)) and (resize(unsigned(in2), width+1));
-        when ALU_OR    =>
+        when OP_OR    =>
           temp := (resize(unsigned(in1), width+1)) or (resize(unsigned(in2), width+1));
-        when ALU_XOR   =>
+        when OP_XOR   =>
           temp := (resize(unsigned(in1), width+1)) xor (resize(unsigned(in2), width+1));
-        when ALU_SRL   =>
+        when OP_SRL   =>
           temp := SHIFT_RIGHT(resize(unsigned(in1), width+1), to_integer(unsigned(in2)));
-        when ALU_SLL   =>
+        when OP_SLL   =>
           temp := SHIFT_LEFT(resize(unsigned(in1), width+1), to_integer(unsigned(in2)));
-        when ALU_SRA   =>
+        when OP_SRA   =>
           temp := unsigned(SHIFT_RIGHT(resize(signed(in1), width+1), to_integer(unsigned(in2))));
-        when ALU_SLT   =>
+        when OP_SLT   =>
           if in1 < in2 then
               temp := to_unsigned(1, temp'length);
           end if;
-        when ALU_SLTU  =>
+        when OP_SLTU  =>
           if ('0' & in1) < ('0' & in2) then
               temp := to_unsigned(1, temp'length);
           end if;
-        -- when ALU_MFHI  =>
-        -- when ALU_MFLO  =>
-        -- when ALU_LW    =>
-        -- when ALU_SW    =>
-        -- when ALU_LB    =>
-        -- when ALU_LBU   =>
-        -- when ALU_SB    =>
-        -- when ALU_LH    =>
-        -- when ALU_LHU   =>
-        -- when ALU_SH    =>
-        -- when ALU_LWU   =>
-        -- when ALU_BEQ   =>
-        -- when ALU_BNE   =>
-        -- when ALU_BLEZ  =>
-        -- when ALU_BGTZ  =>
-        -- when ALU_J     =>
-        -- when ALU_JAL   =>
-        -- when ALU_JR    =>
+        -- when OP_MFHI  =>
+        -- when OP_MFLO  =>
+        -- when OP_LW    =>
+        -- when OP_SW    =>
+        -- when OP_LB    =>
+        -- when OP_LBU   =>
+        -- when OP_SB    =>
+        -- when OP_LH    =>
+        -- when OP_LHU   =>
+        -- when OP_SH    =>
+        -- when OP_LWU   =>
+        -- when OP_BEQ   =>
+        -- when OP_BNE   =>
+        -- when OP_BLEZ  =>
+        -- when OP_BGTZ  =>
+        -- when OP_J     =>
+        -- when OP_JAL   =>
+        -- when OP_JR    =>
         when others    => null;
     end case;
     output <= std_logic_vector(resize(temp, width));
