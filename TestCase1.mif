@@ -1,0 +1,21 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = hex;
+% Program RAM Data %
+Content
+  Begin
+0000 : 00221826; %XOR%
+0001 : 00011021; %ADDU%
+0002 : 00011024; %AND%
+0003 : 00011025; %OR%
+0004 : 00011000; %SLL%
+0005 : 0001102A; %SLT%
+0006 : 0001102B; %SLTU%
+0007 : 00011003; %SRA%
+0008 : 00011002; %SRL%
+0009 : 00011023; %SUBU%
+000A : 10640010; %BEQ%
+
+[000B..00FF] : FFFFFFFF;
+End;

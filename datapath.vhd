@@ -7,13 +7,14 @@ use ieee.numeric_std.all;
 use work.library_file.all;
 entity datapath is
   port (
-  clk, rst                                                   : in std_logic;
-  mem_en, pc_en, a_en, b_en, ir_en, alu_en, wren, regfile_en : in std_logic;
-  alu_sel                                                    : in opcode;
-  mem_sel, a_sel, wr_reg_sel, wr_data_sel                    : in std_logic_vector(0 downto 0);
-  b_sel, pc_sel                                              : in std_logic_vector(1 downto 0);
-  immediate                                                  : out std_logic;
-  instruction                                                : out opcode
+  clk, rst                                          : in std_logic;
+  mem_en, pc_write, a_en, b_en, ir_en               : in std_logic;
+  alu_en, wren, regfile_en, pc_write_cond, alu_zero : in std_logic;
+  alu_sel                                           : in opcode;
+  mem_sel, a_sel, wr_reg_sel, wr_data_sel           : in std_logic_vector(0 downto 0);
+  b_sel, pc_sel                                     : in std_logic_vector(1 downto 0);
+  immediate                                         : out std_logic;
+  instruction                                       : out opcode
   );
 end entity;
 
@@ -26,7 +27,7 @@ architecture arch of datapath is
   signal mem_mux_inputs, a_mux_inputs, wr_data_mux_inputs                                 : arr32(0 to 1);
   signal b_mux_inputs, pc_mux_inputs                                                      : arr32(0 to 3);
   signal wr_reg_mux_inputs                                                                : arr5(0 to 1);
-  signal instructionSig                                                                   : opcode;
+  signal pc_en                                                                            : std_logic;
   begin
     mem_mux_inputs     <= (PC_out, ALU_out);
     wr_reg_mux_inputs  <= (IR_out(20 downto 16), IR_out(15 downto 11));
@@ -34,8 +35,6 @@ architecture arch of datapath is
     b_mux_inputs       <= (B_out, x"00000001", signext_out, left_shift_out);
     a_mux_inputs       <= (PC_out, A_out);
     pc_mux_inputs      <= (ALU_in, ALU_out, (x"0" & IR_out(25 downto 0) & "00"), ZERO);
-    instruction        <= instructionSig;
-
     U_PC : entity work.reg
     port map (
     clk      => clk,
@@ -159,94 +158,98 @@ architecture arch of datapath is
     writeRegSel => write_reg,
     clk         => clk
     );
-    process(IR_out)
+    process(IR_out, alu_zero, pc_write, pc_write_cond)
     begin
+      pc_en <= (alu_zero and pc_write_cond) or pc_write;
       immediate <= '0';
+      instruction <= OP_STALL;
       if IR_out(31 downto 26) = "000000" then
         case( IR_out(5 downto 0) ) is
           when CONST_ADDU =>
-          instructionSig <= OP_ADDU;
+          instruction <= OP_ADDU;
           when CONST_AND =>
-          instructionSig <= OP_AND;
+          instruction <= OP_AND;
           when CONST_JR =>
-          instructionSig <= OP_JR;
+          instruction <= OP_JR;
           when CONST_MFHI =>
-          instructionSig <= OP_MFHI;
+          instruction <= OP_MFHI;
           when CONST_MFLO =>
-          instructionSig <= OP_MFLO;
+          instruction <= OP_MFLO;
           when CONST_MULT =>
-          instructionSig <= OP_MULT;
+          instruction <= OP_MULT;
           when CONST_MULTU =>
-          instructionSig <= OP_MULTU;
+          instruction <= OP_MULTU;
           when CONST_OR =>
-          instructionSig <= OP_OR;
+          instruction <= OP_OR;
           when CONST_SLL =>
-          instructionSig <= OP_SLL;
+            if PC_out /= x"00000000" then
+              instruction <= OP_SLL;
+            end if;
           when CONST_SLT =>
-          instructionSig <= OP_SLT;
+          instruction <= OP_SLT;
           when CONST_SLTU =>
-          instructionSig <= OP_SLTU;
+          instruction <= OP_SLTU;
           when CONST_SRA =>
-          instructionSig <= OP_SRA;
+          instruction <= OP_SRA;
           when CONST_SRL =>
-          instructionSig <= OP_SRL;
+          instruction <= OP_SRL;
           when CONST_SUBU =>
-          instructionSig <= OP_SUBU;
+          instruction <= OP_SUBU;
           when CONST_XOR =>
-          instructionSig <= OP_XOR;
+          instruction <= OP_XOR;
           when others =>
-          instructionSig <= OP_STALL;
+          instruction <= OP_STALL;
         end case;
 
       elsif IR_out(31 downto 26) = "000001"  then
         case( IR_out(20 downto 16) ) is
           when CONST_BLTZ =>
-            instructionSig <= OP_BLTZ;
+            instruction <= OP_BLTZ;
           when CONST_BGEZ =>
-            instructionSig <= OP_BGEZ;
+            instruction <= OP_BGEZ;
           when others =>
-            instructionSig <= OP_STALL;
+            instruction <= OP_STALL;
         end case;
 
       else
         immediate <= '1';
         case( IR_out(31 downto 26) ) is
           when CONST_ADDIU =>
-            instructionSig <= OP_ADDU;
+            instruction <= OP_ADDU;
           when CONST_ANDI =>
-            instructionSig <= OP_AND;
+            instruction <= OP_AND;
           when CONST_BEQ =>
-            instructionSig <= OP_BEQ;
+            instruction <= OP_BEQ;
           when CONST_BGTZ =>
-            instructionSig <= OP_BGTZ;
+            instruction <= OP_BGTZ;
           when CONST_BLEZ =>
-            instructionSig <= OP_BLEZ;
+            instruction <= OP_BLEZ;
           when CONST_BNE =>
-            instructionSig <= OP_BNE;
+            instruction <= OP_BNE;
           when CONST_LB =>
-            instructionSig <= OP_LB;
+            instruction <= OP_LB;
           when CONST_LBU =>
-            instructionSig <= OP_LBU;
+            instruction <= OP_LBU;
           when CONST_LH =>
-            instructionSig <= OP_LH;
+            instruction <= OP_LH;
           when CONST_LW =>
-            instructionSig <= OP_LW;
+            instruction <= OP_LW;
           when CONST_LWU =>
-            instructionSig <= OP_LWU;
+            instruction <= OP_LWU;
           when CONST_ORI =>
-            instructionSig <= OP_OR;
+            instruction <= OP_OR;
           when CONST_SB =>
-            instructionSig <= OP_SB;
+            instruction <= OP_SB;
           when CONST_SLTI =>
-            instructionSig <= OP_SLT;
+            instruction <= OP_SLT;
           when CONST_SLTIU =>
-            instructionSig <= OP_SLTU;
+            instruction <= OP_SLTU;
           when CONST_SW =>
-            instructionSig <= OP_SW;
+            instruction <= OP_SW;
           when CONST_XORI =>
-            instructionSig <= OP_XOR;
+            instruction <= OP_XOR;
           when others =>
-          instructionSig <= OP_STALL;
+          instruction <= OP_STALL;
         end case;
       end if;
 

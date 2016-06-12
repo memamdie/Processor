@@ -45,13 +45,15 @@ package library_file is
   );
   type STATE_TYPE is (
       INIT,
-      PC_TO_IR,
-      OP_TO_ADDR,
-      DECODE,
-      REGFILE_TO_AB,
-      TO_ALU,
-      STORE_ALU,
-      READ_FROM_MEM
+      FETCH,
+      MEM_ADDR_COMP,
+      EXECUTION,
+      EXECUTION_1,
+      BRANCH,
+      JUMP,
+      LW_STATE,
+      LW_STATE_1,
+      SW_STATE
   );
   constant ZERO : std_logic_vector(31 downto 0) := x"00000000";
   constant CONST_BGEZ  : std_logic_vector(4 downto 0) := "00001";
