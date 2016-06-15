@@ -17,14 +17,16 @@ architecture top_level of top_level is
   signal mem_sel, a_sel, wr_reg_sel, wr_data_sel                       : std_logic_vector(0 downto 0);
   signal b_sel, pc_sel                                                 : std_logic_vector(1 downto 0);
   signal IR, alu_sel                                                   : opcode;
-  signal imm, pc_write_cond, alu_zero                                  : std_logic;
+  signal imm, pc_write_cond, alu_zero, eq, gt, lt                      : std_logic;
 begin
   U_CONTROLLER : entity work.controller
   port map (
       clk           => clk,
       rst           => rst,
       instruction   => IR,
-      immediate     => imm,
+      eq            => eq,
+      lt            => lt,
+      gt            => gt,
       mem_en        => mem_en,
       pc_write      => pc_write,
       pc_write_cond => pc_write_cond,
@@ -48,7 +50,9 @@ begin
       clk           => clk,
       rst           => rst,
       instruction   => IR,
-      immediate     => imm,
+      eq            => eq,
+      lt            => lt,
+      gt            => gt,
       mem_en        => mem_en,
       pc_write      => pc_write,
       pc_write_cond => pc_write_cond,

@@ -225,10 +225,30 @@ begin
         -- when OP_LHU   =>
         -- when OP_SH    =>
         -- when OP_LWU   =>
-        -- when OP_BEQ   =>
-        -- when OP_BNE   =>
-        -- when OP_BLEZ  =>
-        -- when OP_BGTZ  =>
+        when OP_BEQ   =>
+          if in1 = in2 then
+            eq <= '1';
+          end if;
+        when OP_BNE   =>
+          if in1 /= in2 then
+            eq <= '1';
+          end if;
+        when OP_BLEZ  =>
+          if in1 <= ZERO then
+            lt <= '1';
+          end if;
+        when OP_BGTZ  =>
+          if in1 > ZERO then
+            gt <= '1';
+          end if;
+        when OP_BLTZ  =>
+          if in1 < ZERO then
+            lt <= '1';
+          end if;
+        when OP_BGEZ  =>
+          if in1 >= ZERO then
+            gt <= '1';
+          end if;
         -- when OP_J     =>
         -- when OP_JAL   =>
         -- when OP_JR    =>

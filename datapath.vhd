@@ -13,7 +13,7 @@ entity datapath is
   alu_sel                                           : in opcode;
   mem_sel, a_sel, wr_reg_sel, wr_data_sel           : in std_logic_vector(0 downto 0);
   b_sel, pc_sel                                     : in std_logic_vector(1 downto 0);
-  immediate                                         : out std_logic;
+  eq, gt, lt                                        : out std_logic;
   instruction                                       : out opcode
   );
 end entity;
@@ -137,7 +137,10 @@ architecture arch of datapath is
     in1      => in1,
     in2      => in2,
     sel      => alu_sel,
-    output   => ALU_in
+    output   => ALU_in,
+    eq       => eq,
+    lt       => lt,
+    gt       => gt
     );
     U_MEMORY : entity work.ram
     port map (
@@ -161,7 +164,6 @@ architecture arch of datapath is
     process(IR_out, alu_zero, pc_write, pc_write_cond)
     begin
       pc_en <= (alu_zero and pc_write_cond) or pc_write;
-      immediate <= '0';
       instruction <= OP_STALL;
       if IR_out(31 downto 26) = "000000" then
         case( IR_out(5 downto 0) ) is
@@ -212,7 +214,6 @@ architecture arch of datapath is
         end case;
 
       else
-        immediate <= '1';
         case( IR_out(31 downto 26) ) is
           when CONST_ADDIU =>
             instruction <= OP_ADDU;

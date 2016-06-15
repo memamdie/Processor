@@ -8,7 +8,7 @@ use work.library_file.all;
 
 entity controller is
   port (
-  clk, rst, immediate                               : in std_logic;
+  clk, rst, eq, gt, lt                              : in std_logic;
   instruction                                       : in opcode;
   alu_sel                                           : out opcode;
   mem_en, pc_write, a_en, b_en, ir_en               : out std_logic;
@@ -34,8 +34,8 @@ architecture arch of controller is
     begin
       mem_en        <= '0';
       pc_write      <= '0';
-      a_en          <= '0';
-      b_en          <= '0';
+      a_en          <= '1';
+      b_en          <= '1';
       ir_en         <= '0';
       alu_en        <= '0';
       wren          <= '0';
@@ -49,15 +49,21 @@ architecture arch of controller is
       b_sel         <= (others => '0');
       pc_sel        <= (others => '0');
       alu_sel       <= OP_STALL;
+
       case( state ) is
 
+        -- This allows the PC to increment and a new value to be read from memory
+        when STALL =>
+          next_state <= INIT;
+
+        -- This state enables the IR to get the value from the memory
         when INIT =>
           ir_en <= '1';
-          -- pc_write <= '1';
+          mem_en <= '1';
           b_sel <= "01";
-
           next_state <= FETCH;
 
+        -- This state decodes the instruction and determines the appropriate next state
         when FETCH =>
           b_sel <= "11";
 
@@ -85,6 +91,7 @@ architecture arch of controller is
             next_state <= JUMP;
           end if;
 
+        -- This is where we compute the memory address where we load a word or store a word
         when MEM_ADDR_COMP =>
           a_sel <= "1";
           b_sel <= "10";
@@ -94,45 +101,72 @@ architecture arch of controller is
             next_state <= SW_STATE;
           end if;
 
+        -- This state is entered for R type instructions
         when EXECUTION =>
           a_sel <= "1";
           alu_sel <= instruction;
           next_state <= EXECUTION_1;
 
+        -- This state is entered when we have a branch instruction but dont know if we should take the branch yet
         when BRANCH =>
-          a_sel <= "1";
-          pc_sel <= "01";
+          alu_sel <= instruction;
+          if (instruction = OP_BEQ and eq = '1') or
+          (instruction = OP_BNE and eq = '0') or
+          (instruction = OP_BGEZ and gt = '1') or
+          (instruction = OP_BGTZ and gt = '1') or
+          (instruction = OP_BLTZ and lt = '1') or
+          (instruction = OP_BLEZ and lt = '1') then
+            next_state <= BRANCH_TAKEN;
+          else
+            next_state <= INCREMENT;
+          end if;
+
+        -- This state is entered when a branch instruction takes the branch
+        when BRANCH_TAKEN =>
+          b_sel <="10";
+          alu_sel <= OP_ADDU;
           pc_write <= '1';
           next_state <= INIT;
 
+        -- This state is for jump instructions because they are different from branches
         when JUMP =>
           pc_write <= '1';
           pc_sel <= "10";
           next_state <= INIT;
 
+        -- This state is used to load a word from memory into the reg file
         when LW_STATE =>
           mem_sel <= "1";
           next_state <= LW_STATE_1;
 
+        -- Loads a word from memory into the reg file
         when LW_STATE_1 =>
           wr_reg_sel <= "1";
           regfile_en <= '1';
           next_state <= INIT;
 
+
+        -- This state is used to store a value back into the reg file
         when SW_STATE =>
           mem_en <= '1';
           mem_sel <= "1";
           next_state <= INIT;
 
+        -- After executing the R type instruction, save it to the registers and increment PC
         when EXECUTION_1 =>
           wr_reg_sel <= "1";
           regfile_en <= '1';
           alu_sel <= OP_ADDU;
           b_sel <= "01";
           pc_write <= '1';
+          next_state <= STALL;
 
+        -- A state that any state may call to increment the PC by one
+        when INCREMENT =>
+          alu_sel <= OP_ADDU;
+          b_sel <= "01";
+          pc_write <= '1';
           next_state <= INIT;
-
         when others => null;
       end case;
     end process;

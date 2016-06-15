@@ -33,7 +33,7 @@ begin
       begin
           switches <= (others => '0');
           buttons <= (others => '0');
-          wait for 100 ns;
+          wait for 90 ns;
           rst <= '0';
           -- wait for 50 ns;
           -- buttons <= "01";

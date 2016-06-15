@@ -44,16 +44,19 @@ package library_file is
       OP_JR
   );
   type STATE_TYPE is (
+      STALL,
       INIT,
       FETCH,
       MEM_ADDR_COMP,
       EXECUTION,
       EXECUTION_1,
       BRANCH,
+      BRANCH_TAKEN,
       JUMP,
       LW_STATE,
       LW_STATE_1,
-      SW_STATE
+      SW_STATE,
+      INCREMENT
   );
   constant ZERO : std_logic_vector(31 downto 0) := x"00000000";
   constant CONST_BGEZ  : std_logic_vector(4 downto 0) := "00001";
