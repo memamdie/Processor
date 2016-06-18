@@ -51,6 +51,7 @@ package library_file is
   );
   type STATE_TYPE is (
       READ_RAM,
+      ENABLE,
       READ_REG,
       INSTRUCTION_FETCH,
       DECODE,
@@ -63,6 +64,7 @@ package library_file is
       JUMP,
       LW_STATE,
       LW_STATE_1,
+      LW_STATE_2,
       SW_STATE,
       INCREMENT
   );

@@ -84,6 +84,7 @@ architecture arch of controller is
 
         when ENABLE =>
           a_en <= '1';
+          b_en <= '1';
           next_state <= MEM_ADDR_COMP;
 
         -- This is where we compute the memory address where we load a word or store a word
@@ -97,7 +98,7 @@ architecture arch of controller is
              instruction = OP_LBU or instruction = OP_LHU then
             next_state <= LW_STATE;
           elsif instruction = OP_SW or instruction = OP_SB or
-                instruction = OP_SH then
+                instruction = OP_SH then            
             next_state <= SW_STATE;
           end if;
 
