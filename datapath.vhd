@@ -13,7 +13,7 @@ entity datapath is
   alu_sel                                           : in opcode;
   mem_sel, a_sel, wr_reg_sel, wr_data_sel           : in std_logic_vector(0 downto 0);
   b_sel, pc_sel                                     : in std_logic_vector(1 downto 0);
-  eq, gt, lt                                        : out std_logic;
+  toBranchOrNotToBranch                             : out std_logic;
   instruction                                       : out opcode
   );
 end entity;
@@ -134,13 +134,11 @@ architecture arch of datapath is
     );
     U_ALU : entity work.ALU
     port map (
-    in1      => in1,
-    in2      => in2,
-    sel      => alu_sel,
-    output   => ALU_in,
-    eq       => eq,
-    lt       => lt,
-    gt       => gt
+    in1                   => in1,
+    in2                   => in2,
+    sel                   => alu_sel,
+    output                => ALU_in,
+    toBranchOrNotToBranch => toBranchOrNotToBranch
     );
     U_MEMORY : entity work.ram
     port map (
@@ -216,9 +214,9 @@ architecture arch of datapath is
       else
         case( IR_out(31 downto 26) ) is
           when CONST_ADDIU =>
-            instruction <= OP_ADDU;
+            instruction <= OP_ADDIU;
           when CONST_ANDI =>
-            instruction <= OP_AND;
+            instruction <= OP_ANDI;
           when CONST_BEQ =>
             instruction <= OP_BEQ;
           when CONST_BGTZ =>
@@ -242,13 +240,13 @@ architecture arch of datapath is
           when CONST_SB =>
             instruction <= OP_SB;
           when CONST_SLTI =>
-            instruction <= OP_SLT;
+            instruction <= OP_SLTI;
           when CONST_SLTIU =>
-            instruction <= OP_SLTU;
+            instruction <= OP_SLTIU;
           when CONST_SW =>
             instruction <= OP_SW;
           when CONST_XORI =>
-            instruction <= OP_XOR;
+            instruction <= OP_XORI;
           when others =>
           instruction <= OP_STALL;
         end case;

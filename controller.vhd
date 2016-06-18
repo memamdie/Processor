@@ -8,7 +8,7 @@ use work.library_file.all;
 
 entity controller is
   port (
-  clk, rst, eq, gt, lt                              : in std_logic;
+  clk, rst, toBranchOrNotToBranch                   : in std_logic;
   instruction                                       : in opcode;
   alu_sel                                           : out opcode;
   mem_en, pc_write, a_en, b_en, ir_en               : out std_logic;
@@ -24,7 +24,7 @@ architecture arch of controller is
     sequential : process(clk, rst)
     begin
       if rst = '1' then
-        state <= INIT;
+        state <= INSTRUCTION_FETCH;
       elsif rising_edge(clk) then
         state <= next_state;
       end if;
@@ -53,120 +53,155 @@ architecture arch of controller is
       case( state ) is
 
         -- This allows the PC to increment and a new value to be read from memory
-        when STALL =>
-          next_state <= INIT;
+        when READ_RAM =>
+          next_state <= INSTRUCTION_FETCH;
 
         -- This state enables the IR to get the value from the memory
-        when INIT =>
+        when INSTRUCTION_FETCH =>
           ir_en <= '1';
           mem_en <= '1';
-          b_sel <= "01";
-          next_state <= FETCH;
+          -- b_sel <= "01";
+          next_state <= DECODE;
 
         -- This state decodes the instruction and determines the appropriate next state
-        when FETCH =>
-          b_sel <= "11";
+        when DECODE =>
+          -- b_sel <= "11";
 
           if  instruction = OP_LWU or instruction = OP_LH or
               instruction = OP_LW or instruction = OP_SW or
               instruction = OP_LB or instruction = OP_LBU or
               instruction = OP_SB or instruction = OP_LHU or
               instruction = OP_SH then
-            next_state <= MEM_ADDR_COMP;
-
-          elsif instruction = OP_ADDU or instruction = OP_SUBU or
-                instruction = OP_MULT or instruction = OP_MULTU or
-                instruction = OP_AND or instruction = OP_OR or
-                instruction = OP_XOR or instruction = OP_SRL or
-                instruction = OP_SLL or instruction = OP_SRA or
-                instruction = OP_SLT or instruction = OP_SLTU then
-            next_state <= EXECUTION;
-
-          elsif instruction = OP_BEQ or instruction = OP_BGTZ or
-          instruction = OP_BGEZ or instruction = OP_BNE or
-          instruction = OP_BLTZ or instruction = OP_BLEZ then
-            next_state <= BRANCH;
+            next_state <= ENABLE;
 
           elsif instruction = OP_J or instruction = OP_JR or instruction = OP_JAL then
             next_state <= JUMP;
+
+          else
+            next_state <= READ_REG;
+
           end if;
+
+        when ENABLE =>
+          a_en <= '1';
+          next_state <= MEM_ADDR_COMP;
 
         -- This is where we compute the memory address where we load a word or store a word
         when MEM_ADDR_COMP =>
           a_sel <= "1";
-          b_sel <= "10";
-          if instruction = OP_LW then
+          b_sel <=  IR_IMM;
+          alu_sel <= OP_ADDU;
+          alu_en <= '1';
+          if instruction = OP_LWU or instruction = OP_LH or
+             instruction = OP_LW  or instruction = OP_LB or
+             instruction = OP_LBU or instruction = OP_LHU then
             next_state <= LW_STATE;
-          elsif instruction = OP_SW then
+          elsif instruction = OP_SW or instruction = OP_SB or
+                instruction = OP_SH then
             next_state <= SW_STATE;
           end if;
 
-        -- This state is entered for R type instructions
+        when READ_REG =>
+          a_en <= '1';
+          b_en <= '1';
+          next_state <= EXECUTION;
+
+        -- This state is entered for R, I, and Branch type instructions
         when EXECUTION =>
+          if instruction = OP_ADDIU or instruction = OP_ANDI or
+             instruction = OP_ORI or instruction   = OP_XORI or
+             instruction = OP_SLTI or instruction  = OP_SLTIU then
+                b_sel <=  IR_IMM;
+          end if;
           a_sel <= "1";
+          alu_en <= '1';
           alu_sel <= instruction;
-          next_state <= EXECUTION_1;
+          if (instruction = OP_BEQ  or instruction = OP_BNE  or
+                instruction = OP_BGEZ or instruction = OP_BGTZ or
+                instruction = OP_BLTZ or instruction = OP_BLEZ) then
+              if toBranchOrNotToBranch = '1' then
+                next_state <= BRANCH_TAKEN;
+              else
+                next_state <= INCREMENT;
+              end if;
+          else
+            next_state <= EXECUTION_1;
+          end if;
 
         -- This state is entered when we have a branch instruction but dont know if we should take the branch yet
         when BRANCH =>
           alu_sel <= instruction;
-          if (instruction = OP_BEQ and eq = '1') or
-          (instruction = OP_BNE and eq = '0') or
-          (instruction = OP_BGEZ and gt = '1') or
-          (instruction = OP_BGTZ and gt = '1') or
-          (instruction = OP_BLTZ and lt = '1') or
-          (instruction = OP_BLEZ and lt = '1') then
-            next_state <= BRANCH_TAKEN;
+          if  (instruction = OP_BEQ  and toBranchOrNotToBranch = '1') or
+              (instruction = OP_BNE  and toBranchOrNotToBranch = '1') or
+              (instruction = OP_BGEZ and toBranchOrNotToBranch = '1') or
+              (instruction = OP_BGTZ and toBranchOrNotToBranch = '1') or
+              (instruction = OP_BLTZ and toBranchOrNotToBranch = '1') or
+              (instruction = OP_BLEZ and toBranchOrNotToBranch = '1') then
+                next_state <= BRANCH_TAKEN;
           else
-            next_state <= INCREMENT;
+                next_state <= INCREMENT;
           end if;
 
         -- This state is entered when a branch instruction takes the branch
         when BRANCH_TAKEN =>
-          b_sel <="10";
+          b_sel <= IR_IMM;
           alu_sel <= OP_ADDU;
           pc_write <= '1';
-          next_state <= INIT;
+          next_state <= INSTRUCTION_FETCH;
 
         -- This state is for jump instructions because they are different from branches
         when JUMP =>
           pc_write <= '1';
           pc_sel <= "10";
-          next_state <= INIT;
+          next_state <= INSTRUCTION_FETCH;
 
         -- This state is used to load a word from memory into the reg file
         when LW_STATE =>
           mem_sel <= "1";
+          mem_en <= '1';
           next_state <= LW_STATE_1;
 
         -- Loads a word from memory into the reg file
         when LW_STATE_1 =>
+          mem_en <= '1';
+          next_state <= LW_STATE_2;
+
+        when LW_STATE_2 =>
           wr_reg_sel <= "1";
           regfile_en <= '1';
-          next_state <= INIT;
+          next_state <= INSTRUCTION_FETCH;
 
 
         -- This state is used to store a value back into the reg file
         when SW_STATE =>
           mem_en <= '1';
           mem_sel <= "1";
-          next_state <= INIT;
+          next_state <= INSTRUCTION_FETCH;
 
         -- After executing the R type instruction, save it to the registers and increment PC
         when EXECUTION_1 =>
-          wr_reg_sel <= "1";
+          -- Store the alu output into the reg file
+          if instruction = OP_ADDU  or instruction   = OP_SUBU  or
+             instruction = OP_MULT  or instruction   = OP_MULTU or
+             instruction = OP_AND   or instruction   = OP_OR    or
+             instruction = OP_XOR   or instruction   = OP_SRL   or
+             instruction = OP_SLL   or instruction   = OP_SRA   or
+             instruction = OP_SLT   or instruction   = OP_SLTU  then
+            wr_reg_sel <= "1";
+          end if;
           regfile_en <= '1';
+          -- Simultaneously increment the PC
           alu_sel <= OP_ADDU;
           b_sel <= "01";
           pc_write <= '1';
-          next_state <= STALL;
+          next_state <= READ_RAM;
 
         -- A state that any state may call to increment the PC by one
         when INCREMENT =>
           alu_sel <= OP_ADDU;
           b_sel <= "01";
           pc_write <= '1';
-          next_state <= INIT;
+          next_state <= INSTRUCTION_FETCH;
         when others => null;
       end case;
     end process;

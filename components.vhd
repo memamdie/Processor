@@ -168,10 +168,10 @@ use work.library_file.all;
 entity ALU is
   generic ( width : positive := 32);
   port (
-    in1, in2    : in std_logic_vector(width-1 downto 0);
-    sel         : in opcode;
-    output      : out std_logic_vector(width-1 downto 0);
-    eq, gt, lt  : out std_logic
+    in1, in2              : in std_logic_vector(width-1 downto 0);
+    sel                   : in opcode;
+    output                : out std_logic_vector(width-1 downto 0);
+    toBranchOrNotToBranch : out std_logic
   );
 end entity;
 
@@ -180,11 +180,9 @@ begin
   COMBINATIONAL : process(in1, in2, sel)
     variable temp    : unsigned(width downto 0);
   begin
-	  temp        := (others => '0');
-    output      <= (others => '0');
-    eq          <= '0';
-    gt          <= '0';
-    lt          <= '0';
+	  temp                  := (others => '0');
+    output                <= (others => '0');
+    toBranchOrNotToBranch <= '0';
     case sel is
         when OP_ADDU  =>
           temp := resize(unsigned(in1), width+1) + resize(unsigned(in2), width+1);
@@ -227,27 +225,27 @@ begin
         -- when OP_LWU   =>
         when OP_BEQ   =>
           if in1 = in2 then
-            eq <= '1';
+            toBranchOrNotToBranch <= '1';
           end if;
         when OP_BNE   =>
           if in1 /= in2 then
-            eq <= '1';
+            toBranchOrNotToBranch <= '1';
           end if;
         when OP_BLEZ  =>
           if in1 <= ZERO then
-            lt <= '1';
+            toBranchOrNotToBranch <= '1';
           end if;
         when OP_BGTZ  =>
           if in1 > ZERO then
-            gt <= '1';
+            toBranchOrNotToBranch <= '1';
           end if;
         when OP_BLTZ  =>
           if in1 < ZERO then
-            lt <= '1';
+            toBranchOrNotToBranch <= '1';
           end if;
         when OP_BGEZ  =>
           if in1 >= ZERO then
-            gt <= '1';
+            toBranchOrNotToBranch <= '1';
           end if;
         -- when OP_J     =>
         -- when OP_JAL   =>
