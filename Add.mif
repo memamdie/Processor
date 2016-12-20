@@ -1,0 +1,15 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = bin;
+% Program RAM Data %					--  This program will Add two numbers from the addresses 7FFF and 7FFE
+Content							
+  Begin
+00 : 10001100000000010111111111111110	;		-- lw $s1, 7FFE($s0) 	 / 	load word in adress 7FFE + s0 to s1 
+04 : 10001100000000100111111111111111	;		-- lw $s2, 7FFF($s0) 	 / 	load word in adress 7FFF + s0 to s2 
+08 : 00000000001000100001100000100001	;		-- addu $s3, $s1, $s2 	 / 	s3 = s1 + s2				
+0C : 10101100000000110111111111111111	;		-- sw $s3, 7FFF($s0)	 / 	store s3 in the adress s0 + 7FFF
+10 : 00001000000000000000000000000100	;		-- j  110	  	 / 	infinite loop
+
+
+End;

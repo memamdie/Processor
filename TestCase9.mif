@@ -1,0 +1,15 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = bin;
+% Program RAM Data %					-- This program will test these instructions:
+Content							-- lw, lb, lbu, lh, and lhu.	
+  Begin
+00 : 10001100000000010000000000011000	;		-- lw $s1, 20($s0)	 / 	load data in adress 20 + 0 to s1	// s1 = 80008080
+04 : 10000000000000100000000000011000	;		-- lb $s2, 20($s0)	 / 	load byte signed in adress 20 + 0 to s2	// s2 = FFFFFF80
+08 : 10010000000000110000000000011000	;		-- lbU $s3, 20($s0)	 / 	load byte unsigned  adress 20 + 0 to s1	// s3 = 00000080
+0C : 10000100000001000000000000011000	;		-- lh $s4, 20($s0)	 / 	load halfW signed 20 + 0 to s1		// s4 = FFFF8080
+10 : 10010100000001010000000000011000	;		-- lhu $s1, 20($s0)	 / 	load HalfW unsigned adress 20 + 0 to s1	// s5 = 00008080 
+14 : 00001000000000000000000000000101	;		-- j  14		 / 	infinite loop
+18 : 10000000000000001000000010000000	;		-- 80008080
+End;

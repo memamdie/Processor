@@ -184,45 +184,34 @@ begin
     output                <= (others => '0');
     toBranchOrNotToBranch <= '0';
     case sel is
-        when OP_ADDU  =>
+        when OP_ADDU | OP_ADDIU  =>
           temp := resize(unsigned(in1), width+1) + resize(unsigned(in2), width+1);
-        when OP_SUBU  =>
-          temp := resize(unsigned(in1), width+1) + resize(unsigned(in2), width+1);
+        when OP_SUBU | OP_SUBIU =>
+          temp := resize(unsigned(in1), width+1) - resize(unsigned(in2), width+1);
         when OP_MULT  =>
           temp := unsigned(resize(signed(in1)*signed(in2), width+1));
         when OP_MULTU =>
           temp := resize(unsigned(in1)*unsigned(in2), width+1);
-        when OP_AND   =>
+        when OP_AND | OP_ANDI  =>
           temp := (resize(unsigned(in1), width+1)) and (resize(unsigned(in2), width+1));
-        when OP_OR    =>
+        when OP_OR | OP_ORI   =>
           temp := (resize(unsigned(in1), width+1)) or (resize(unsigned(in2), width+1));
-        when OP_XOR   =>
+        when OP_XOR | OP_XORI  =>
           temp := (resize(unsigned(in1), width+1)) xor (resize(unsigned(in2), width+1));
         when OP_SRL   =>
-          temp := SHIFT_RIGHT(resize(unsigned(in1), width+1), to_integer(unsigned(in2)));
-        when OP_SLL   =>
-          temp := SHIFT_LEFT(resize(unsigned(in1), width+1), to_integer(unsigned(in2)));
+          temp := SHIFT_RIGHT(resize(unsigned(in2), width+1), to_integer(unsigned(in1)));
+        when OP_SLL  =>
+          temp := SHIFT_LEFT(resize(unsigned(in2), width+1), to_integer(unsigned(in1)));
         when OP_SRA   =>
-          temp := unsigned(SHIFT_RIGHT(resize(signed(in1), width+1), to_integer(unsigned(in2))));
-        when OP_SLT   =>
+          temp := unsigned(SHIFT_RIGHT(resize(signed(in2), width+1), to_integer(unsigned(in1))));
+        when OP_SLT | OP_SLTI  =>
+          if signed(in1) < signed(in2) then
+              temp := to_unsigned(1, temp'length);
+          end if;
+        when OP_SLTU | OP_SLTIU =>
           if in1 < in2 then
               temp := to_unsigned(1, temp'length);
           end if;
-        when OP_SLTU  =>
-          if ('0' & in1) < ('0' & in2) then
-              temp := to_unsigned(1, temp'length);
-          end if;
-        -- when OP_MFHI  =>
-        -- when OP_MFLO  =>
-        -- when OP_LW    =>
-        -- when OP_SW    =>
-        -- when OP_LB    =>
-        -- when OP_LBU   =>
-        -- when OP_SB    =>
-        -- when OP_LH    =>
-        -- when OP_LHU   =>
-        -- when OP_SH    =>
-        -- when OP_LWU   =>
         when OP_BEQ   =>
           if in1 = in2 then
             toBranchOrNotToBranch <= '1';
@@ -247,15 +236,11 @@ begin
           if in1 >= ZERO then
             toBranchOrNotToBranch <= '1';
           end if;
-        -- when OP_J     =>
-        -- when OP_JAL   =>
-        -- when OP_JR    =>
         when others    => null;
     end case;
     output <= std_logic_vector(resize(temp, width));
   end process;
 end architecture;
-
 
 
 ---- ---- ---- ---- ---- ----
@@ -264,43 +249,63 @@ end architecture;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.library_file.all;
+use ieee.math_real.all;
 
-entity register_file is
+entity regFile is
+  generic (width  :     positive := 32);
   port(
-    outA        : out std_logic_vector(31 downto 0);
-    outB        : out std_logic_vector(31 downto 0);
-    input       : in  std_logic_vector(31 downto 0);
-    writeEnable : in  std_logic;
-    regASel     : in  std_logic_vector(4 downto 0);
-    regBSel     : in  std_logic_vector(4 downto 0);
-    writeRegSel : in  std_logic_vector(4 downto 0);
-    clk         : in  std_logic
-    );
-end register_file;
+    wren        : in std_logic;
+    jumpAndLink : in std_logic;
+    clk,rst     : in std_logic;
+    regASel     : in std_logic_vector(4 downto 0);
+    regBSel     : in std_logic_vector(4 downto 0);
+    writeRegSel : in std_logic_vector(4 downto 0);
+    input 	    : in std_logic_vector(width-1 downto 0);
+    outputA     : out std_logic_vector(width-1 downto 0);
+    outputB     : out std_logic_vector(width-1 downto 0)
+  );
 
+end regFile;
 
-architecture behavioral of register_file is
-  signal registers : registerFile := (others => (others => '0'));
-begin
-  regFile : process (clk, registers, regASel, regBSel, writeEnable) is
+architecture BHV of regFile is
+  type registerFile is array(natural range <>) of std_logic_vector (width-1 downto 0);
+  signal registers: registerFile(31 downto 0);
   begin
-    -- outA <= ZERO;
-    -- outB <= ZERO;
-    if rising_edge(clk) then
-      -- Read A and B before bypass
-      outA <= registers(to_integer(unsigned(regASel)));
-      outB <= registers(to_integer(unsigned(regBSel)));
-      -- Write and bypass
-      if writeEnable = '1' then
-        registers(to_integer(unsigned(writeRegSel))) <= input;  -- Write
-        if regASel = writeRegSel then  -- Bypass for read A
-          outA <= input;
+
+  regFile : process(clk,rst)
+  begin
+
+    -- when reset all the ouputs set to zero
+    if (rst = '1') then
+      outputA   <= (others => '0');
+      outputB   <= (others => '0');
+
+      -- when reset all the registers set to zero
+      for i in 0 to 31 loop
+        registers(i) <= (others =>'0');
+      end loop;
+
+    elsif rising_edge(clk) then
+      registers(0) <=(others =>'0'); -- $s0 will be always set to zero
+      outputA <= registers(to_integer(unsigned(regAsel)));
+      outputB <= registers(to_integer(unsigned(regBsel)));
+
+      if wren ='1' then
+
+        if jumpAndLink = '1' then -- when jump and link we write to register $s31
+          registers(31) <= input;
+        else
+          registers(to_integer(unsigned(writeRegSel))) <= input;
         end if;
-        if regBSel = writeRegSel then  -- Bypass for read B
-          outB <= input;
+
+        if (regAsel = writeRegSel) then
+          outputA <= input;
+        end if;
+
+        if (regBsel = writeRegSel) then
+          outputB <= input;
         end if;
       end if;
     end if;
   end process;
-end behavioral;
+end BHV;

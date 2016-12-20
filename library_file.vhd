@@ -13,6 +13,7 @@ package library_file is
       OP_ADDU,
       OP_ADDIU,
       OP_SUBU,
+      OP_SUBIU,
       OP_MULT,
       OP_MULTU,
       OP_AND,
@@ -50,35 +51,45 @@ package library_file is
       OP_JR
   );
   type STATE_TYPE is (
-      READ_RAM,
-      ENABLE,
-      READ_REG,
-      INSTRUCTION_FETCH,
+      INCREMENT,
+      READ_PC,
+      READ_REGFILE,
+      FETCH,
       DECODE,
       MEM_ADDR_COMP,
-      IMMEDIATE_EXECUTION,
       EXECUTION,
       EXECUTION_1,
+      EXECUTION_2,
       BRANCH,
-      BRANCH_TAKEN,
       JUMP,
-      LW_STATE,
-      LW_STATE_1,
-      LW_STATE_2,
-      SW_STATE,
-      INCREMENT
+      READ_MEM,
+      LOAD_MEM,
+      STORE_MEM,
+      WRITE_BACK
   );
 
-  constant B_OUT       : std_logic_vector(1 downto 0)  := "00";
-  constant PC_INC         : std_logic_vector(1 downto 0)  := "01";
-  constant IR_IMM      : std_logic_vector(1 downto 0)  := "10";
-  constant IR_MULT     : std_logic_vector(1 downto 0)  := "11";
+  constant B_REG_OUT   : std_logic_vector(1 downto 0)  := "00";
+  constant FOUR        : std_logic_vector(1 downto 0)  := "01";
+  constant SIGN_EXT    : std_logic_vector(1 downto 0)  := "10";
+  constant SEXT_SHFL   : std_logic_vector(1 downto 0)  := "11";
+
+  constant PC_REG_OUT  : std_logic_vector(1 downto 0)  := "00";
+  constant A_REG_OUT   : std_logic_vector(1 downto 0)  := "01";
+  constant LOGIC_SHIFT : std_logic_vector(1 downto 0)  := "10";
+
+  constant ALU_OUTPUT  : std_logic_vector(1 downto 0)  := "00";
+  constant ALU_REG_OUT : std_logic_vector(1 downto 0)  := "01";
+  constant IR_SHIFT    : std_logic_vector(1 downto 0)  := "10";
+  constant ZEROS       : std_logic_vector(1 downto 0)  := "11";
+
 
   constant ZERO        : std_logic_vector(31 downto 0) := x"00000000";
+
   constant CONST_BGEZ  : std_logic_vector(4 downto 0)  := "00001";
   constant CONST_BLTZ  : std_logic_vector(4 downto 0)  := "00000";
 
   constant CONST_ADDIU : std_logic_vector(5 downto 0)  := "001001";
+  constant CONST_SUBIU : std_logic_vector(5 downto 0)  := "010000";
   constant CONST_ANDI  : std_logic_vector(5 downto 0)  := "001100";
   constant CONST_BEQ   : std_logic_vector(5 downto 0)  := "000100";
   constant CONST_BGTZ  : std_logic_vector(5 downto 0)  := "000111";
@@ -116,4 +127,5 @@ package library_file is
   constant CONST_LHU   : std_logic_vector(5 downto 0)  := CONST_OR;
   constant CONST_LW    : std_logic_vector(5 downto 0)  := CONST_SUBU;
   constant CONST_SW    : std_logic_vector(5 downto 0)  := CONST_SLTU;
+
 end package;

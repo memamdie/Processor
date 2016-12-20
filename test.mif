@@ -1,0 +1,35 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = bin;
+% Program RAM Data %				-- This program will test these instrunctions:
+						-- lw, lh, lhu, lb, lbu, sw, sh, and sb. 
+Content
+  Begin
+00 : 10001100000000010000000001100100	;	-- lw $s1, 64($s0)	 / 	load word in adress 64 + s0 to s1		// s1 = 80008080
+04 : 10101100000000000111111111111111	;	-- sw $s1, 68($s0)	 / 	store s1 in the adress s0 + 68 
+08 : 10100100000000010000000001101100	;	-- sh $s1, 6C($s0)	 / 	store half s1 in the adress s0 + 6C
+0C : 10100000000000010000000001110000	;	-- sb $s1, 70($s0)	 / 	store byte of s1 in the adress s0 + 70
+
+10 : 10001100000000100000000001101000	;	-- lw  $s2, 68($s0)	 / 	load word in adress 68 + s0 to s2		// s2 = 80008080 
+14 : 10000100000000110000000001101000	;	-- lh  $s3, 68($s0)	 / 	load half word in adress 68 + s0 to s3		// s3 = FFFF8080
+18 : 10010100000001000000000001101000	;	-- lhu $s4, 68($s0)	 / 	load half word unsigned in adress 68 + s0 to s4	// s4 = 00008080
+1C : 10000000000001010000000001101000	;	-- lb  $s5, 68($s0)	 / 	load byte word in adress 68 + s0 to s5		// s5 = FFFFFF80
+20 : 10010000000001100000000001101000	;	-- lbu $s6, 68($s0)	 / 	load byte unsigned unsigned adress 68 +s0 to s6	// s6 = 00000080
+
+24 : 10001100000001110000000001101100	;	-- lw  $s7, 6C($s0)	 / 	load word in adress 6C + s0 to s7		// s7 = 00008080 
+28 : 10000100000010000000000001101100	;	-- lh  $s8, 6C($s0)	 / 	load half word in adress 6C + s0 to s8		// s8 = FFFF8080
+2C : 10010100000010010000000001101100	;	-- lhu $s9, 6C($s0)	 / 	load half word unsigned in adress 6C + s0 to s9	// s9 = 00008080
+30 : 10000000000010100000000001101100	;	-- lb  $s10, 6C($s0)	 / 	load byte word in adress 6C + s0 to s10		// s10 = FFFFFF80
+34 : 10010000000010110000000001101100	;	-- lbu $s11 6C($s0)	 / 	load byte unsigned unsigned adress 6C+s0 to s11	// s11 = 00000080
+
+38 : 10001100000011000000000001110000	;	-- lw  $s12, 70($s0)	 / 	load word in adress 70 + s0 to s12		// s12 = 00000080 
+3C : 10000100000011010000000001110000	;	-- lh  $s13, 70($s0)	 / 	load half word in adress 70 + s0 to s13		// s13 = 00000080
+40 : 10010100000011100000000001110000	;	-- lhu $s14, 70($s0)	 / 	load half word unsigned in adress 70 +s0 to s14	// s14 = 00000080
+44 : 10000000000011110000000001110000	;	-- lb  $s15, 70($s0)	 / 	load byte word in adress 70 + s0 to s15		// s15 = FFFFFF80
+48 : 10010000000100000000000001110000	;	-- lbu $s16, 70($s0)	 / 	load byte unsigned unsigned adress 70+s0 to s16	// s16 = 00000080
+
+4C : 00001000000000000000000000010011	;	-- jmp  4C		 / 	infinite loop
+
+64 : 10000000001000001000000000000010	;	-- 80008080
+End;s

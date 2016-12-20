@@ -1,0 +1,20 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = bin;
+% Program RAM Data %					-- This program will test this instructions:
+						        -- lw, slt, sltu, slti, sltiu, and j.
+Content
+  Begin
+00 : 10001100000000010000000000011100	;		-- lw $s1, 1C($s0)	 / 	load word in adress 1C + s0 to s1	// s1 = F0000000
+04 : 10001100000000100000000000100000	;		-- lw $s2, 20($s0)	 / 	load word in adress 20 + s0 to s2	// s2 = 0000000F
+08 : 00000000001000100001100000101010	;		-- slt $s3 $s1, $s2	 / 	s3 =1  if s1 < s2 else s3=0 signed 	// s3 = 1
+0C : 00000000010000010010000000101011	;		-- sltu $s4 $s2, $s1	 / 	s4 =1  if s2 < s1 else s4=0 unsigned 	// s4 = 1
+10 : 00101000001001010000000000011111	;		-- slti $s5 $s1, 1F	 / 	s5 =1  if s1 < 1F else s5=0 signed 	// s5 = 1
+14 : 00101100010001100000000000011111	;		-- sltiu $s6 $s2, 1F	 / 	s6 =1  if s2 < 1F else s6=0 unsigned 	// s6 = 1
+18 : 00001000000000000000000000000110	;		-- j  18		 / 	infinite loop
+1C : 11110000000000000000000000000000	;		-- F0000000
+20 : 00000000000000000000000000001111	;		-- 0000000F
+
+
+End;

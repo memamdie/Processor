@@ -1,0 +1,24 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = bin;
+% Program RAM Data %					--  This program will multiply two numbers from the addresses 7FFF and 7FFE
+							    and store the result in the address 7FFF.
+Content							
+  Begin
+00 : 00000000000000010000000000000000	;		-- Select $s1
+04 : 00000000000000000000000000000001	;		-- number 1
+08 : 00000000000000100000000000000000	;		-- Select $s2 
+0C : 00000000000000000000000000000010	;		-- number 2
+10 : 00000000000000110000000000000000	;		-- Select $s3		
+14 : 00000000000000000000000000000011	;		-- number 3
+18 : 00000000000001000000000000000000	;		-- Select $s4 	
+1C : 00000000000000000000000000000100	;		-- number 4 			
+20 : 00000000000001010000000000000000	;		-- Select $s5
+24 : 00000000000000000000000000000101	;		-- number 5
+28 : 00000000100001010000000000011001	;		-- Multiply $s4 and $s5 and store to $LO
+2C : 00000000000001100000000000010010	;		-- Move From $LO to $s6
+30 : 10101100000001101111111111111111	;		-- sw $s6, FFFF($s0)	 / 	store s6 in the adress s0 + FFFF
+
+
+End;

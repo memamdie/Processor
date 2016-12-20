@@ -12,19 +12,21 @@ entity top_level is
 end entity;
 
 architecture top_level of top_level is
-
-  signal mem_en, pc_write, a_en, b_en, ir_en, alu_en, wren, regfile_en : std_logic;
-  signal mem_sel, a_sel, wr_reg_sel, wr_data_sel                       : std_logic_vector(0 downto 0);
-  signal b_sel, pc_sel                                                 : std_logic_vector(1 downto 0);
-  signal IR, alu_sel                                                   : opcode;
-  signal imm, pc_write_cond, alu_zero, toBranchOrNotToBranch           : std_logic;
+  signal alu_sel                                                        : opcode;
+  signal mem_en, pc_write, a_en, b_en, ir_en, alu_en, wren, regfile_en  : std_logic;
+  signal imm, pc_write_cond, alu_zero, toBranchOrNotToBranch, jump_link : std_logic;
+  signal mem_sel, wr_reg_sel, wr_data_sel                               : std_logic_vector(0 downto 0);
+  signal a_sel, b_sel, pc_sel                                           : std_logic_vector(1 downto 0);
+  signal IR, PC                                                         : std_logic_vector(31 downto 0);
 begin
   U_CONTROLLER : entity work.controller
   port map (
       clk                   => clk,
       rst                   => rst,
-      instruction           => IR,
+      IR_out                => IR,
+      program_counter       => PC,
       toBranchOrNotToBranch => toBranchOrNotToBranch,
+      jump_link             => jump_link,
       mem_en                => mem_en,
       pc_write              => pc_write,
       pc_write_cond         => pc_write_cond,
@@ -48,7 +50,9 @@ begin
       clk                   => clk,
       rst                   => rst,
       instruction           => IR,
+      program_counter       => PC,
       toBranchOrNotToBranch => toBranchOrNotToBranch,
+      jump_link             => jump_link,
       mem_en                => mem_en,
       pc_write              => pc_write,
       pc_write_cond         => pc_write_cond,
