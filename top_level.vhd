@@ -12,12 +12,13 @@ entity top_level is
 end entity;
 
 architecture top_level of top_level is
-  signal alu_sel                                                        : opcode;
-  signal mem_en, pc_write, a_en, b_en, ir_en, alu_en, wren, regfile_en  : std_logic;
-  signal imm, pc_write_cond, alu_zero, toBranchOrNotToBranch, jump_link : std_logic;
-  signal mem_sel, wr_reg_sel, wr_data_sel                               : std_logic_vector(0 downto 0);
-  signal a_sel, b_sel, pc_sel                                           : std_logic_vector(1 downto 0);
-  signal IR, PC                                                         : std_logic_vector(31 downto 0);
+  signal alu_sel                                                   : opcode;
+  signal mem_en, pc_write, a_en, b_en, alu_mult_reg_en             : std_logic;
+  signal ir_en, alu_en, wren, regfile_en                           : std_logic;
+  signal pc_write_cond, alu_zero, toBranchOrNotToBranch, jump_link : std_logic;
+  signal mem_sel, wr_reg_sel                                       : std_logic_vector(0 downto 0);
+  signal a_sel, b_sel, pc_sel, wr_data_sel                         : std_logic_vector(1 downto 0);
+  signal IR, PC                                                    : std_logic_vector(31 downto 0);
 begin
   U_CONTROLLER : entity work.controller
   port map (
@@ -35,6 +36,7 @@ begin
       b_en                  => b_en,
       ir_en                 => ir_en,
       alu_en                => alu_en,
+      alu_mult_reg_en       => alu_mult_reg_en,
       wren                  => wren,
       regfile_en            => regfile_en,
       mem_sel               => mem_sel,
@@ -59,6 +61,7 @@ begin
       alu_zero              => alu_zero,
       a_en                  => a_en,
       b_en                  => b_en,
+      alu_mult_reg_en       => alu_mult_reg_en,
       ir_en                 => ir_en,
       alu_en                => alu_en,
       wren                  => wren,

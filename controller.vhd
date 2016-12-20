@@ -9,13 +9,14 @@ use work.library_file.all;
 entity controller is
   generic(width : positive := 32);
   port (
-    clk, rst, toBranchOrNotToBranch                   : in std_logic;
-    IR_out, program_counter                           : in std_logic_vector(width-1 downto 0);
-    alu_sel                                           : out opcode;
-    mem_en, pc_write, a_en, b_en, ir_en, jump_link    : out std_logic;
-    alu_en, wren, regfile_en, pc_write_cond, alu_zero : out std_logic;
-    mem_sel, wr_reg_sel, wr_data_sel                  : out std_logic_vector(0 downto 0);
-    a_sel, b_sel, pc_sel                              : out std_logic_vector(1 downto 0)
+    clk, rst, toBranchOrNotToBranch                : in std_logic;
+    IR_out, program_counter                        : in std_logic_vector(width-1 downto 0);
+    alu_sel                                        : out opcode;
+    mem_en, pc_write, a_en, b_en, ir_en, jump_link : out std_logic;
+    alu_en, wren, regfile_en, alu_mult_reg_en      : out std_logic;
+    pc_write_cond, alu_zero                        : out std_logic;
+    mem_sel, wr_reg_sel                            : out std_logic_vector(0 downto 0);
+    a_sel, b_sel, pc_sel, wr_data_sel              : out std_logic_vector(1 downto 0)
   );
 end entity;
 
@@ -36,30 +37,32 @@ architecture arch of controller is
     variable instruction : opcode;
 
     begin
-      mem_en        <= '0';
-      jump_link     <= '0';
-      pc_write      <= '0';
-      a_en          <= '0';
-      b_en          <= '0';
-      ir_en         <= '0';
-      alu_en        <= '0';
-      wren          <= '0';
-      regfile_en    <= '0';
-      alu_zero      <= '0';
-      pc_write_cond <= '0';
-      mem_sel       <= (others => '0');
-      a_sel         <= (others => '0');
-      wr_reg_sel    <= (others => '0');
-      wr_data_sel   <= (others => '0');
-      b_sel         <= (others => '0');
-      pc_sel        <= (others => '0');
-      alu_sel       <= OP_STALL;
-      instruction   := OP_STALL;
+      mem_en          <= '0';
+      jump_link       <= '0';
+      pc_write        <= '0';
+      a_en            <= '0';
+      b_en            <= '0';
+      ir_en           <= '0';
+      alu_en          <= '0';
+      alu_mult_reg_en <= '0';
+
+      wren            <= '0';
+      regfile_en      <= '0';
+      alu_zero        <= '0';
+      pc_write_cond   <= '0';
+      mem_sel         <= (others => '0');
+      a_sel           <= (others => '0');
+      wr_reg_sel      <= (others => '0');
+      wr_data_sel     <= (others => '0');
+      b_sel           <= (others => '0');
+      pc_sel          <= (others => '0');
+      alu_sel         <= OP_STALL;
+      instruction     := OP_STALL;
 
       case( state ) is
 
         when INCREMENT =>
-          b_sel <= FOUR;
+          b_sel <= B_MUX_FOUR;
           pc_write <= '1';
           alu_sel <= OP_ADDU;
           next_state <= READ_PC;
@@ -185,6 +188,8 @@ architecture arch of controller is
                 next_state <= BRANCH;
 
             -- R type instructions
+          elsif instruction = OP_MFHI or instruction = OP_MFLO then
+              next_state <= EXECUTION_2;
             else
               next_state <= EXECUTION;
 
@@ -195,8 +200,8 @@ architecture arch of controller is
           next_state <= MEM_ADDR_COMP;
 
         when MEM_ADDR_COMP =>
-          a_sel            <= A_REG_OUT;
-          b_sel            <= SIGN_EXT;
+          a_sel            <= A_MUX_A_REG;
+          b_sel            <= B_MUX_SIGN_EXT;
           alu_sel          <= OP_ADDU;
           alu_en           <= '1';
           if  instruction_signal = OP_LWU or instruction_signal = OP_LH or
@@ -221,7 +226,7 @@ architecture arch of controller is
 
         when WRITE_BACK   =>
             regfile_en    <= '1';
-            wr_data_sel   <= "1";
+            wr_data_sel   <= WR_DATA_MUX_MEM;
             next_state    <= INCREMENT;
 
         when EXECUTION    =>
@@ -229,7 +234,7 @@ architecture arch of controller is
             b_en          <= '1';
             next_state    <= EXECUTION_1;
         when EXECUTION_1  =>
-            a_sel         <= A_REG_OUT;
+            a_sel         <= A_MUX_A_REG;
             if instruction_signal = OP_ADDIU or
                instruction_signal = OP_SUBIU or
                instruction_signal = OP_ANDI  or
@@ -237,15 +242,20 @@ architecture arch of controller is
                instruction_signal = OP_XORI  or
                instruction_signal = OP_SLTI  or
                instruction_signal = OP_SLTIU then
-                  b_sel   <= SIGN_EXT;
+                  b_sel   <= B_MUX_SIGN_EXT;
             elsif instruction_signal = OP_SRL or
                   instruction_signal = OP_SRA or
                   instruction_signal = OP_SLL then
-                  a_sel   <= LOGIC_SHIFT;
+                  a_sel   <= A_MUX_SHIFT;
             end if;
             alu_sel       <= instruction_signal;
             alu_en        <= '1';
-            next_state    <= EXECUTION_2;
+            if instruction_signal = OP_MULT or instruction_signal = OP_MULTU then
+              alu_mult_reg_en <= '1';
+              next_state  <= INCREMENT;
+            else
+              next_state  <= EXECUTION_2;
+            end if;
 
         when EXECUTION_2  =>
           wr_reg_sel    <= "1";
@@ -256,22 +266,26 @@ architecture arch of controller is
              instruction_signal = OP_ORI   or
              instruction_signal = OP_SLTI  or
              instruction_signal = OP_SLTIU then
-                wr_reg_sel <= "0";
+                wr_reg_sel  <= "0";
+          elsif instruction_signal = OP_MFHI then
+                wr_data_sel <= WR_DATA_MUX_MFHI;
+          elsif instruction_signal = OP_MFLO then
+                wr_data_sel <= WR_DATA_MUX_MFLO;
             end if;
             regfile_en    <= '1';
             next_state    <= INCREMENT;
 
         when BRANCH       =>
-            a_sel         <= A_REG_OUT;
+            a_sel         <= A_MUX_A_REG;
             alu_sel       <= instruction_signal;
             alu_en        <= '1';
             pc_write_cond <= '1';
-            pc_sel        <= ALU_REG_OUT;
+            pc_sel        <= PC_MUX_ALU;
             next_state    <= FETCH;
 
         when JUMP         =>
             pc_write      <= '1';
-            pc_sel        <= IR_SHIFT;
+            pc_sel        <= PC_MUX_IR;
             next_state    <= FETCH;
         when others       => null;
       end case;

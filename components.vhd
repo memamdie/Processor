@@ -171,6 +171,7 @@ entity ALU is
     in1, in2              : in std_logic_vector(width-1 downto 0);
     sel                   : in opcode;
     output                : out std_logic_vector(width-1 downto 0);
+    mult_output           : out std_logic_vector((2*width)-1 downto 0);
     toBranchOrNotToBranch : out std_logic
   );
 end entity;
@@ -182,6 +183,7 @@ begin
   begin
 	  temp                  := (others => '0');
     output                <= (others => '0');
+    mult_output           <= (others => '0');
     toBranchOrNotToBranch <= '0';
     case sel is
         when OP_ADDU | OP_ADDIU  =>
@@ -189,9 +191,9 @@ begin
         when OP_SUBU | OP_SUBIU =>
           temp := resize(unsigned(in1), width+1) - resize(unsigned(in2), width+1);
         when OP_MULT  =>
-          temp := unsigned(resize(signed(in1)*signed(in2), width+1));
+          mult_output <= std_logic_vector(signed(in1)*signed(in2));
         when OP_MULTU =>
-          temp := resize(unsigned(in1)*unsigned(in2), width+1);
+          mult_output <= std_logic_vector(unsigned(in1)*unsigned(in2));
         when OP_AND | OP_ANDI  =>
           temp := (resize(unsigned(in1), width+1)) and (resize(unsigned(in2), width+1));
         when OP_OR | OP_ORI   =>
