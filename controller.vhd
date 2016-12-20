@@ -33,7 +33,7 @@ architecture arch of controller is
       end if;
     end process;
 
-    states : process(IR_out, state, instruction_signal)
+    states : process(IR_out, state, instruction_signal, toBranchOrNotToBranch)
     variable instruction : opcode;
 
     begin
@@ -181,11 +181,6 @@ architecture arch of controller is
             -- Jump completion
             elsif instruction = OP_J or instruction = OP_JR or instruction = OP_JAL then
               next_state <= JUMP;
-              --Branch completion
-            elsif instruction = OP_BEQ  or instruction = OP_BNE
-              or instruction  = OP_BLEZ or instruction = OP_BGTZ
-              or instruction  = OP_BLTZ or instruction = OP_BGEZ then
-                next_state <= BRANCH;
 
             -- R type instructions
           elsif instruction = OP_MFHI or instruction = OP_MFLO then
@@ -253,6 +248,15 @@ architecture arch of controller is
             if instruction_signal = OP_MULT or instruction_signal = OP_MULTU then
               alu_mult_reg_en <= '1';
               next_state  <= INCREMENT;
+            --Branch completion
+            elsif instruction_signal = OP_BEQ  or instruction_signal = OP_BNE
+              or instruction_signal  = OP_BLEZ or instruction_signal = OP_BGTZ
+              or instruction_signal  = OP_BLTZ or instruction_signal = OP_BGEZ then
+                if toBranchOrNotToBranch = '1' then
+                  next_state <= BRANCH;
+                else
+                  next_state <= INCREMENT;
+                end if;
             else
               next_state  <= EXECUTION_2;
             end if;
@@ -276,12 +280,13 @@ architecture arch of controller is
             next_state    <= INCREMENT;
 
         when BRANCH       =>
-            a_sel         <= A_MUX_A_REG;
-            alu_sel       <= instruction_signal;
+            a_sel         <= A_MUX_PC_REG;
+            b_sel         <= B_MUX_SEXT_SHFL;
+            alu_sel       <= OP_ADDU;
             alu_en        <= '1';
-            pc_write_cond <= '1';
+            pc_write      <= '1';
             pc_sel        <= PC_MUX_ALU;
-            next_state    <= FETCH;
+            next_state    <= READ_PC;
 
         when JUMP         =>
             pc_write      <= '1';
